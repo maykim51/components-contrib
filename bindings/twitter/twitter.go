@@ -3,7 +3,6 @@ package twitter
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/dapr/components-contrib/bindings"
 	"github.com/mrjones/oauth"
@@ -18,13 +17,11 @@ const (
 	twitterURLBase = "https://api.twitter.com/1.1/statuses/update.json"
 )
 
-//OutputBinding Default comment
 type OutputBinding interface {
 	Init(metadata bindings.Metadata) error
 	Write(req *bindings.WriteRequest) error
 }
 
-//Tweet Default comment
 type Tweet struct {
 	metadata twitterMetadata
 }
@@ -37,12 +34,10 @@ type twitterMetadata struct {
 	status         string
 }
 
-//NewTweet Default comment
 func NewTweet() *Tweet {
 	return &Tweet{}
 }
 
-//Init Default comment
 func (t *Tweet) Init(metadata bindings.Metadata) error {
 	twitterTweet := twitterMetadata{
 		status: "default post",
@@ -70,21 +65,21 @@ func (t *Tweet) Init(metadata bindings.Metadata) error {
 	twitterTweet.tokenSecret = metadata.Properties["tokenSecret"]
 	twitterTweet.status = metadata.Properties["status"]
 
+	t.metadata = twitterTweet
+
 	return nil
 }
 
 func (t *Tweet) Write(req *bindings.WriteRequest) error {
 	fmt.Println("Writing Test Started.")
-	consumer := oauth.NewConsumer(t.metadata.consumerKey, t.metadata.consumerSecret, oauth.ServiceProvider{})
-	accessToken := &oauth.AccessToken{Token: t.metadata.accessToken,
-		Secret: t.metadata.tokenSecret}
-	currentTime := time.Now()
-	response, err := consumer.Post(twitterURLBase, map[string]string{"consumerKey": t.metadata.consumerKey, "consumerSecret": t.metadata.consumerSecret,
-		"accessToken": t.metadata.consumerSecret, "tokenSecret": t.metadata.tokenSecret,
-		"status": "dapr status " + currentTime.Format("2006-01-02 15:04:05")}, accessToken)
+	consumer := oauth.NewConsumer(req.Metadata["consumerKey"], req.Metadata["consumerSecret"], oauth.ServiceProvider{})
+	accessToken := &oauth.AccessToken{Token: req.Metadata["accessToken"], Secret: req.Metadata["tokenSecret"]}
+	response, err := consumer.Post(twitterURLBase, req.Metadata, accessToken)
+
 	if err != nil {
 		return err
 	}
+
 	defer response.Body.Close()
 	fmt.Println("Response:", response.StatusCode, response.Status)
 	if !(response.StatusCode >= 200 && response.StatusCode < 300) {
