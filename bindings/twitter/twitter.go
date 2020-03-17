@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/dapr/components-contrib/bindings"
+	"github.com/dapr/dapr/pkg/logger"
 	"github.com/mrjones/oauth"
 )
 
@@ -24,6 +25,7 @@ type OutputBinding interface {
 
 type Tweet struct {
 	metadata twitterMetadata
+	logger   logger.Logger
 }
 
 type twitterMetadata struct {
@@ -34,8 +36,10 @@ type twitterMetadata struct {
 	status         string
 }
 
-func NewTweet() *Tweet {
-	return &Tweet{}
+func NewTweet(logger logger.Logger) *Tweet {
+	return &Tweet{
+		logger: logger,
+	}
 }
 
 func (t *Tweet) Init(metadata bindings.Metadata) error {
